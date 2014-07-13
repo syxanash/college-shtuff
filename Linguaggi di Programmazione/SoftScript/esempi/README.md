@@ -1,0 +1,3 @@
+### why .rb extension?
+
+Just because of syntax highlighting...

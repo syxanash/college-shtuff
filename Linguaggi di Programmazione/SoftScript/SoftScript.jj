@@ -1,0 +1,940 @@
+/**
+ * Parser for a high-level scripting programming language called SoftScript.
+ * This language contains common control structures, both conditional and iterative ones, you can also declare functions and modules.
+ * It follows dynamic scope rules and in compile time gives info about stack records and environment status.
+ * At RUN-TIME the interpreter provides a real-time interactive shell (to test some features, for example) or compile a source file by specifying its path.
+ *
+ * @author Simone Marzulli
+ *         Antonio Antonino
+ *
+ * @date 13/06/2014
+ *
+ */
+
+options {
+  LOOKAHEAD = 1;
+  IGNORE_CASE = true;
+  STATIC = false;
+  DEBUG_PARSER = false;
+}
+
+PARSER_BEGIN(SoftScript)
+
+import java.util.*;
+import java.io.*;
+
+public class SoftScript {
+
+    public final static String VERSION = "SoftScript by Simone Marzulli & Antonio Antonino Version 1.2";
+    
+    // Arraylist where to store variables, once declared.
+    private static ArrayList<DynamicScope> varsList = new ArrayList<DynamicScope>();
+
+    // scope number counter, scope list will start from 0
+    // once declared the first block
+    private static int scopeCounter = -1;
+
+    private static Scanner in = new Scanner(System.in);
+
+    private static SoftScript parser;
+
+    private static boolean consoleParser = false;
+
+    public static void main(String args[]) throws FileNotFoundException {
+        if (args.length > 0) {
+            if (args[0].equals("--help") || args[0].equals("-h") || args[0].equals("--h") || args[0].equals("-help")) {
+                System.out.println(VERSION + "\n");
+                System.out.println("Usage: java SoftScript [programfile] [arguments]");
+                System.out.println("  --help\tshows this very useful help!");
+                
+                System.exit(0);
+            } else {
+                try {
+                   String sourceFile = args[0];
+                   
+                   parser = new SoftScript(new FileInputStream(sourceFile));
+                }
+                catch(FileNotFoundException e) {
+                   System.err.println("File not found:\t " + e);
+                }
+            }
+        } else {
+            System.out.println("Hi, let's write code in SoftScript!\n");
+            System.out.print(">");
+
+            consoleParser = true;
+            parser = new SoftScript(System.in);
+        }
+
+        try {
+            parser.main();
+            System.out.println("\nCompilation completed!\nHave a nice day!");
+        }
+        catch (ConsoleModeException e) {
+            System.out.println("\nInteractive shell session ended!\nHave a nice day!");
+        }
+        catch (ParseException e) {
+            Token t = e.currentToken;
+            int line = t.beginLine;
+            int column = t.beginColumn;
+            
+            if(parser.getToken(0).image == null) {
+                System.out.println("Failed to compile. Unresolved problem found with first token.");
+            } else {
+                System.out.println("Failed to compile. Unresolved problem found after token \"" +t+ "\" at line " +line+ " and column " +column);
+            }
+        }
+    }
+
+    // Disable bindings belonging to an old environment, in order to redefine name for other objects.
+    private static void disableOldScope(int scopeNumber) {
+        for (int i = 0; i < varsList.size(); i++) {            
+            if ( (varsList.get(i).getScopeNumber() == scopeNumber) && (varsList.get(i).getStatus()) ) {
+                varsList.get(i).deactivate();
+                System.out.println("Disabling: " + varsList.get(i).getName() + " from scope " +scopeNumber);
+            }
+        }
+    }
+
+    /*
+        Check if variable was declared in a different environment.
+        If parameter is an environment with number < 0 then entire stack will be checked.
+    */
+
+    private static boolean alreadyExists(String variable, int scopeNumber) {
+        boolean duplicate = false;
+        
+        for (int i = 0; i < varsList.size(); i++) {
+            if (scopeNumber < 0) {
+                //If already exists a variable with that name in global scope(scopeNumber < 0) and it's active
+                if ( (varsList.get(i).getName().equals(variable)) && (varsList.get(i).getStatus()) ) {
+                    duplicate = true;
+                    System.out.println("Found " + varsList.get(i).getName() + " in scope: " + varsList.get(i).getScopeNumber());
+                }
+            } else if (varsList.get(i).getScopeNumber() == scopeNumber) {
+                //If already exists a variable with that name in local scope(scopeNumber) and it's active
+                if ( (varsList.get(i).getName().equals(variable)) && (varsList.get(i).getStatus()) ) {
+                    duplicate = true;
+                }
+            }
+        }
+        
+        return duplicate;
+    }
+    
+    // Returns number of elements in arrayList, this method will be used when command "GET_STACK" is executed
+    private static int getStackSize() {
+        return varsList.size();
+    }
+
+    // Shows the whole stack displaying environment content, variable state and name
+    private static void printVariablesStack(int scopeSpecified) {
+        boolean foundSomething = false;
+
+        for (int i = 0; i < varsList.size(); i++) {
+            if (scopeSpecified < 0) {
+                System.out.println(i + ") " + varsList.get(i).getName() + "\tin scope\t" + varsList.get(i).getScopeNumber() + "\tactive:\t" + varsList.get(i).getStatus());
+            } else if (varsList.get(i).getScopeNumber() == scopeSpecified) {
+                foundSomething = true;
+                System.out.println(i + ") " + varsList.get(i).getName() + "\tin scope\t" + varsList.get(i).getScopeNumber() + "\tactive:\t" + varsList.get(i).getStatus());
+            }
+        }
+        
+        if (scopeSpecified >= 0 && !foundSomething) {
+            System.out.println("Nothing found in current scope!");
+        }
+    }
+
+    /*
+      Adds a variabile by specifying name and current environment.
+      If a variable name already exists on the same environment and if it's active
+      then another variable with same name can't be created because there would be a duplicate.
+    */
+
+    private static void addVariable(String name, int scopeNumber) {
+        if (!alreadyExists(name, scopeNumber)) {
+            varsList.add(new DynamicScope(name, scopeNumber));
+        } else {
+            System.err.println(name + " duplicate variable in the same scope!");
+        }
+    }
+}
+PARSER_END(SoftScript)
+
+TOKEN_MGR_DECLS:
+{
+  public static int inLineComments = 0;
+  public static int multiLinesComments = 0;
+}
+
+SKIP: {
+    " "
+    | "\t"
+    | "\r"
+    | "#":INLINE_COMMENT
+    | "/*":MULTILINE_COMMENT
+}
+
+<MULTILINE_COMMENT>SKIP:{
+    "*/"
+    {
+        multiLinesComments++;
+    } :DEFAULT
+}
+
+<MULTILINE_COMMENT>SKIP:{
+    <~[]>
+}
+
+<INLINE_COMMENT>SKIP:{
+    "\n"
+    {
+        inLineComments++;
+    } :DEFAULT
+}
+
+<INLINE_COMMENT>MORE:{
+    <~[]>
+}
+
+// PRIMITIVE TYPES
+
+TOKEN: {
+    <INTEGER: "int">   |
+    <FLOAT: "float">   |
+    <STRING: "string"> |
+    <CHAR: "char">     |
+    <BOOLE: "boolean" | "boole"> |
+    <NULL: "null">
+}
+
+// OPERATORS
+
+TOKEN: {
+    <PLUS: "+">  |
+    <MINUS: "-"> |
+    <MULT: "*">  |
+    <DIV: "/">   |
+    <MOD: "%">   |
+
+    <INCREMENT: <PLUS><PLUS>>   |
+    <DECREMENT: <MINUS><MINUS>> |
+
+    <AND: "&"> |
+    <OR: "|">  |
+    <NOT: "!"> |
+
+    <EQUAL: "=">      |
+    <DIS_EQUAL: "!="> |
+
+    <GREATER: ">" (<EQUAL>)? > |
+    <LOWER: "<" (<EQUAL>)? >
+}
+
+// CONSTANTS, ARRAY AND SCALAR VALUES DECLARATION
+
+TOKEN: {
+    <CONST: "const">   |
+    <VAR: "var">       |
+    <ARRAY: "array">   |
+    <SIZE: "withSize"> |
+    <PER: "x">
+}
+
+// CONTROL FLOW
+
+TOKEN: {
+    <IF: "if" >          |
+    <THEN: "then">       |
+    <ELSE_IF: "else if"> |
+    <ELSE: "else" >      |
+    <END_IF: "end if">   |
+
+    <WHILE: "while">         |
+    <DO: "do">               |
+    <END_WHILE: "end while"> |
+
+    <FOR: "for">         |
+    <END_FOR: "end for"> |
+
+    <CASE: "case">            |
+    <IS: "is">                |
+    <BREAK: "break">          |
+    <CASE_DEFAULT: "default"> |
+    <END_CASE: "end case">    |
+
+    <REPEAT: "repeat"> |
+    <UNTIL: "until">   |
+
+    <GOTO: "goto">   |
+    <LABEL: "label"> |
+
+    <CALL: "call">     |
+    <RETURN: "return">
+}
+
+// WRONG PRODUCTIONS
+
+TOKEN: {
+    <INTEGER2 : "itn">              |
+    <STRING2 : "strign">            |
+    <STRING3 : "sring">             |
+    <STRING4 : "srign">             |
+    <CHAR2 : "car">                 |
+    <VAR2 : "avr">                  |
+    <SIZE2 : "witSize">             |
+    <THEN2 : "ten">                 |
+    <WHILE2 : "wile">               |
+    <END_WHILE2 : "end wile">       |
+    <BREAK2 : "brek">               |
+    <LABEL2 : "lable">              |
+    <FUNCTION2 : "funcion">         |
+    <END_FUNCTION2 : "end funcion">
+}  
+
+// BLOCKS DELIMITERS
+
+TOKEN: {
+    <MODULE: "module">         |
+    <END_MODULE: "end module"> |
+
+    <FUNCTION: "function">                      |
+    <END_FUNCTION: "end func" | "end function"> |
+
+    <BEGIN_BLOCK: "begin"> |
+    <END_BLOCK: "end">
+}
+
+// EXTERNAL FUNCTIONS
+
+TOKEN: {
+    <PRINT: "print"> |
+    
+    <GET_STACK: "GET_STACK">                 |
+    <GET_CURRENT_SCOPE: "GET_CURRENT_SCOPE"> |
+    <GET_VERSION: "GET_VERSION">             |
+    <SUPER_EXIT: "EXIT">
+}
+
+// GENERAL
+
+TOKEN: {
+    <#UPPER: ["A"-"Z"]>                    |
+    <#ALPHA: ["A"-"Z","a"-"z"]>            |
+    <#DIGIT: ["0"-"9"]>                    |
+    <#ALPHANUM: ["A"-"Z","a"-"z","0"-"9"]> |
+    
+    <DOUBLE_QUOTE: "\"">    |
+    <SINGLE_QUOTE: "'">     |
+    <CARRIAGE_RETURN: "\n"> |
+
+    <LPARENT: "("> |
+    <RPARENT: ")"> |
+
+    <LCURLY: "{"> |
+    <RCURLY: "}"> |
+
+    <LBRACK: "["> |
+    <RBRACK: "]"> |
+
+    <POINT: ".">     |
+    <COLON: ":">     |
+    <SEMICOLON: ";"> |
+    <COMMA: ",">     |
+
+    <INTEGER_VALUE: "0" | (<MINUS>)? ["1"-"9"] (<DIGIT>)*>                    |
+    <FLOATING_VALUE : <INTEGER_VALUE> <POINT> (<DIGIT>)+>                     |
+    <STRINGS: <DOUBLE_QUOTE> (~["\r", "\n", "\"", "#"])* <DOUBLE_QUOTE>>      |
+    <CHARS: <SINGLE_QUOTE> ~[" ", "\n", "\r", "\t", "'", "#"] <SINGLE_QUOTE>> |
+    <BOOLE_VALUE: "true" | "false">                                           |
+
+    <NAME: <ALPHA> (<DIGIT> | <ALPHA>)*>
+}
+
+JAVACODE
+void printSkippedComments() {
+    System.out.println("\nSingle-line comments skipped: " + SoftScriptTokenManager.inLineComments);
+    System.out.println("Multi-lines comments skipped: " + SoftScriptTokenManager.multiLinesComments);
+}
+
+JAVACODE
+void printErrorStack() {
+    System.out.println("Stack empty.");
+}
+
+JAVACODE
+void printErrorScope() {
+    System.out.println("No environment has been created.");
+}
+
+JAVACODE
+void printVersion() {
+    System.out.println(VERSION);
+}
+
+JAVACODE
+void superExit() {
+    System.out.println("Good bye and hope you enjoyed SoftScript!");
+    System.exit(0);
+}
+
+// SYNTAX
+
+void main():{} {
+    (
+        <GET_STACK> {
+            printErrorStack();
+        } |
+        <SUPER_EXIT> {
+            superExit();
+        } |
+        <GET_VERSION> {
+            printVersion();
+        } |
+        <GET_CURRENT_SCOPE> {
+            printErrorScope();
+        } |
+        <CARRIAGE_RETURN>
+    )*
+    block() {
+        printSkippedComments();
+    }
+    
+    // Allows real-time shell to end and complete compilation when return is pressed after previous block().
+    // Otherwise infinite return can be after block() and before EOF for source text files.
+    
+    (<CARRIAGE_RETURN> {
+       if(consoleParser) throw new ConsoleModeException();
+    })*
+    <EOF>
+}
+
+/*
+    Everytime parser exits from a block, passes the scope number to a java method which disables
+    all variables on that scope and decrements its counter value.
+    Modules and functions has their own local environment.
+*/
+
+void block():{Token t; int line; int column; scopeCounter++;} {
+    <BEGIN_BLOCK>
+    (<CARRIAGE_RETURN>)*
+    ( expression() )*
+    <END_BLOCK> {
+        disableOldScope(scopeCounter--);
+    } |
+    <MODULE>
+    <NAME>
+    (<CARRIAGE_RETURN>)*
+    ( expression() )*
+    (<END_MODULE> | <END_BLOCK>) {
+        disableOldScope(scopeCounter--);
+    } |
+
+    // Saves in environment formal parameter names.
+    (
+        <FUNCTION> | t = <FUNCTION2> {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found FUNCION at row: "+line+" and column: "+column+", replaced with FUNCTION!");
+    })
+    <NAME>
+    <LPARENT> (
+        t = <NAME> {
+            addVariable(t.toString(), scopeCounter);
+        }
+        
+        (<COMMA> t = <NAME>{
+            addVariable(t.toString(), scopeCounter);
+        })*
+    )?
+    <RPARENT>
+    (<LCURLY> | (<CARRIAGE_RETURN>)+)
+    (expression())*
+    (<RCURLY> | (<END_FUNCTION> | t = <END_FUNCTION2> {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found END FUNCION at row: "+line+" and column: "+column+", replaced with END FUNCTION!");
+    }) | <END_BLOCK>) {
+        disableOldScope(scopeCounter--);
+    } |
+
+    // Inline block can be declared using brackets and writing all expressions on a single line separed by ";".
+    <LCURLY>
+    ( expression() )* 
+    <RCURLY> {
+        disableOldScope(scopeCounter--);
+    }
+}
+
+void expression():{} {
+    command()
+    (<CARRIAGE_RETURN>|<SEMICOLON>)+ |
+    controlStatement()
+    (<CARRIAGE_RETURN>)+ |
+    block()
+    (<CARRIAGE_RETURN>)*
+}
+
+void controlStatement():{} {
+    ifStatement()          |
+    forStatement()         |
+    whileStatement()       |
+    repeatUntilStatement() |
+    caseStatement()
+}
+
+void caseStatement():{Token t; int line; int column; String name = "";} {
+    <CASE>
+    (
+        (
+            <LPARENT>
+            t = <NAME>
+            <RPARENT> |        //both "case (var) is..." and "case var is" are allowed
+            t = <NAME>
+        ) {
+            line = t.beginLine;
+            column = t.beginColumn;
+
+            // Checks if variables in case statament are in current scope
+            name = t.toString();
+
+            if (!alreadyExists(name, scopeCounter)) {
+              System.err.println("Using an uninitialized element \"" + name + "\" in case statement at line " + line + " column " + column);
+            }
+          } 
+    )
+    <IS>
+    (<CARRIAGE_RETURN>)*
+        (
+            valueSelection()
+            <COLON>
+            (<CARRIAGE_RETURN>)*
+            ( expression() )*
+            (<BREAK> | <BREAK2> {
+                line = t.beginLine; column = t.beginColumn; System.out.println("Found BREK at row: "+line+" and column: "+column+", replaced with BREAK!");
+            })
+            (<CARRIAGE_RETURN>)*
+        )+
+    (   // Optional default
+        <CASE_DEFAULT>
+        (<COLON>)?
+        (<CARRIAGE_RETURN>)*
+        ( expression() )*
+        (<BREAK> | <BREAK2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found BREK at row: "+line+" and column: "+column+", replaced with BREAK!");
+        })
+        (<CARRIAGE_RETURN>)*
+    )?
+    (<END_CASE>|<END_BLOCK>)
+}
+
+void repeatUntilStatement():{} {
+    <REPEAT>
+    (<CARRIAGE_RETURN>)*
+    ( expression() )*
+    <UNTIL> (
+        (controlExpression())+
+    )
+}
+
+void whileStatement():{Token t; int line; int column;} {
+    (<WHILE> | t = <WHILE2> {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found WILE at row: "+line+" and column: "+column+", replaced with WHILE!");
+    })
+    (
+        (controlExpression())+
+    )
+    <DO>
+    (<CARRIAGE_RETURN>)*
+    (expression())*
+    (
+        (<END_WHILE> | t = <END_WHILE2> {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found END WILE at row: "+line+" and column: "+column+", replaced with END WHILE!");
+        })
+        | <END_BLOCK>
+    )
+}
+
+void forStatement():{} {
+    <FOR>
+    <LPARENT>
+    (controlExpression())* <SEMICOLON>
+    (controlExpression())* <SEMICOLON>
+    (controlExpression())*
+    <RPARENT>
+    (<CARRIAGE_RETURN>)*
+    ( expression() )*
+    (<END_FOR>|<END_BLOCK>)
+}
+
+void ifStatement():{Token t; int line; int column;} {
+    <IF> (
+        (controlExpression())+
+    )
+    (<THEN> | t = <THEN2> {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found TEN at row: "+line+" and column: "+column+", replaced with THEN!");
+    })
+    (<CARRIAGE_RETURN>)*
+    ( expression() )*
+    (<ELSE_IF>
+        (controlExpression())+
+        (<THEN> | t = <THEN2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found TEN at row: "+line+" and column: "+column+", replaced with THEN!");
+        })
+        (<CARRIAGE_RETURN>)*
+        ( expression() )*
+    )*      // ELSE IF (CONDITION) OPTIONAL PARENTHESIS
+    (<ELSE> (<CARRIAGE_RETURN>)* (expression())*)?
+    (<END_IF>|<END_BLOCK>)
+}
+
+void controlExpression():{Token t; int line; int column; String name;} {
+    equalityExpr()
+    ( stateOperators() )?
+}
+
+void stateOperators():{} {
+    <INCREMENT> | <DECREMENT>
+}
+
+void operators():{} {
+    //Assignment
+    <COLON> |
+    
+    // Arithmetic
+    <PLUS> | <MINUS> | <MULT> | <DIV> | <MOD> |
+    
+    // Logic
+    <AND> | <OR> | <NOT> |
+    
+    // Comparison
+    <EQUAL> | <DIS_EQUAL> | <GREATER> | <LOWER>
+}
+
+// MAIN COMMANDS
+
+void command():{} {
+    assignation() |
+
+    gotoStatement() |
+    gotoLabel()     |
+
+    subRoutine()      |
+    returnStatement() |
+    printFunction()   |
+    
+    getStack()   |
+    getVersion()
+}
+
+void primitiveTypes():{Token t; int line; int column;} {
+    (<INTEGER> | t = <INTEGER2 > {
+        line = t.beginLine; column = t.beginColumn; System.out.println("Found ITN at row: "+line+" and column: "+column+", replaced with INT!");
+    }) |
+    <FLOAT> |
+    (
+        <STRING> |
+        t = <STRING2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found STRIGN at row: "+line+" and column: "+column+", replaced with STRING!");
+        } |
+        t = <STRING3> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found SRING at row: "+line+" and column: "+column+", replaced with STRING!");
+        } |
+        t = <STRING4> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found SRIGN at row: "+line+" and column: "+column+", replaced with STRING!");
+        }
+    ) |
+    (
+        <CHAR> | t = <CHAR2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found CAR at row: "+line+" and column: "+column+", replaced with CHAR!");
+        }
+    ) |
+    <BOOLE> | <NULL>
+}
+
+void assignation(): {
+    Token t;
+    
+    boolean creation = false;
+    boolean typeSpecified = false;
+    
+    int line;
+    int column;
+    String name;
+}
+{
+  
+    /*
+     * If "array" or "var" were previously declared, parser knows which variable is going to be assigned.
+     * It has to check if name is already in use by another variable or variable has been created successfully.
+    */
+    (
+        (<ARRAY> | <CONST>
+        | (<VAR> | t = <VAR2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found AVR at row: "+line+" and column: "+column+", replaced with VAR!");
+        })
+        ) {
+            creation = true;
+        }
+    )?
+
+    t = <NAME>
+    {
+        name = t.toString();
+        line = t.beginLine;
+        column = t.beginColumn;
+
+        if (creation) {
+          addVariable(name, scopeCounter);
+        } else {
+            // variable must exists in a existing scope in order to be used
+            if (!alreadyExists(name, scopeCounter)) {
+                System.err.println("Using an uninitialized element \"" +name+ "\" at line " +line+ " column " +column);
+            }
+        }
+    }
+
+    (
+        <LBRACK> (
+            <INTEGER_VALUE> |  // Query array element using integer index or through variable.
+            t = <NAME> {
+                // If a variable referenced to another variable, left-sided variable must exists in existing scope.
+                name = t.toString();
+                line = t.beginLine;
+                column = t.beginColumn;
+
+                if (!alreadyExists(name, -1)) {
+                  System.err.println("Using an uninitialized element \"" +name+ "\" as index of Array at line " +line+ " column " +column);
+                }
+            }
+        )
+        <RBRACK>
+    )*
+
+    (
+        <COLON> primitiveTypes() {
+            name = t.toString();
+            line = t.beginLine;
+            column = t.beginColumn;
+
+            if (creation) {
+                typeSpecified = true;
+            }
+        } |
+        <EQUAL> (
+            // Equality expression contains also arithmetic operator precedence
+            equalityExpr()
+            {
+                if (creation) {
+                    typeSpecified = true;
+                }
+            } |
+            arrayAssignation()
+            {
+                if (creation) {
+                    typeSpecified = true;
+                }
+            } |
+            subRoutine()
+            {
+                if (creation) {
+                    typeSpecified = true;
+                }
+            }
+        ) |
+        (<SIZE> | t = <SIZE2> {
+            line = t.beginLine; column = t.beginColumn; System.out.println("Found WITSIZE at row: "+line+" and column: "+column+", replaced with WHITSIZE!");
+        })
+        
+        <INTEGER_VALUE>
+        (<PER><INTEGER_VALUE>)* {
+            if (creation) {
+                typeSpecified = true;
+            }
+        }
+    )?
+    {
+        // During variable creations, checks if type has been declared.
+        name = t.toString();
+        line = t.beginLine;
+        column = t.beginColumn;
+
+        if (creation && !typeSpecified) {
+            System.err.println("Specify type first for element \"" +name +"\" at line " +line+ " column " +column);
+        }
+    }
+}
+
+// The following methods will be used to implement
+// precedence climbing method by Martin Richards and Colin Whitby-Stevens
+
+void equalityExpr():{}{
+    additiveExpr() ((<EQUAL> | <DIS_EQUAL> | <GREATER> | <LOWER>) additiveExpr())*
+}
+
+void additiveExpr():{}{
+    multiplicativeExpr() ((<PLUS> | <MINUS>) multiplicativeExpr())*
+}
+
+void multiplicativeExpr():{}{
+    primary() ((<MULT> | <DIV> | <MOD>) primary())*
+}
+
+void primary():{
+    Token t;
+    
+    int line;
+    int column;
+    String name;
+}{
+    <LPARENT> equalityExpr() <RPARENT> |
+    
+    valueSelection() |
+    
+    t = <NAME> {
+        name = t.toString();
+        line = t.beginLine;
+        column = t.beginColumn;
+
+        if (!alreadyExists(name, -1)) {
+            System.err.println("Using an uninitialized element \"" +name+ "\" in assignation at line " +line+ " column " +column);
+        }
+    }
+
+    // ARRAY ASSIGNMENT USING INDEX OR VARIABLE
+
+    (
+        <LBRACK> (
+            <INTEGER_VALUE> |  // Query array element using integer index or through a variable
+            t = <NAME> {
+                name = t.toString();
+                line = t.beginLine;
+                column = t.beginColumn;
+
+                if (!alreadyExists(name, -1)) {
+                    System.err.println("Using an uninitialized element \"" +name+ "\" as index of Array in assignation at line "+line+ " column " +column);
+                }
+            }
+        )
+        <RBRACK>
+    )*
+}
+
+// Data type values
+
+void valueSelection():{Token t;} {
+  t = <INTEGER_VALUE>  |
+  t = <FLOATING_VALUE> |
+  t = <STRINGS>        |
+  t = <CHARS>          |
+  t = <BOOLE_VALUE> 
+}
+
+void arrayAssignation():{Token t; String name = ""; int line; int column;} {
+    <LBRACK> (
+        valueSelection() |
+
+            // During creation, if variable is specified to be part of array, variable must have been created previously.
+            t = <NAME> {
+                name = t.toString();
+                line = t.beginLine;
+                column = t.beginColumn;
+
+                if (!alreadyExists(name, -1)) {
+                    System.err.println("Using an uninitialized \"" +name+ "\" element in Array assignation at line " +line+ " column " +column);
+                }
+            }
+        )
+        (
+            <COMMA> (
+                valueSelection() |
+                t = <NAME> {
+                    name = t.toString();
+                    line = t.beginLine;
+                    column = t.beginColumn;
+
+                    if (!alreadyExists(name, -1)) {
+                      System.err.println("Using an uninitialized \"" +name+ "\" element in Array assignation at line " +line+ " column " +column);
+                    }
+                }
+            )
+        )*
+    <RBRACK>
+}
+
+// OTHER COMMANDS
+
+void gotoStatement():{} {
+    // Dijkstra we still love you!
+
+    <GOTO> <NAME>
+}
+
+void gotoLabel():{Token t; int line; int column;} {
+    (<LABEL> | t = <LABEL2> {
+      line = t.beginLine; column = t.beginColumn; System.out.println("Found LABLE at row: "+line+" and column: "+column+", replaced with LABEL!");
+      })
+    <NAME>
+}
+
+void subRoutine():{} {
+    <CALL>
+    <NAME>
+    <LPARENT>
+    (   (valueSelection()|<NAME>)
+        (<COMMA>
+            (valueSelection()|<NAME>)
+        )*
+    )?
+    <RPARENT> {
+      System.out.println("> you just invoked a private subRoutine!");
+      }
+}
+
+void returnStatement():{Token t; String name = ""; int line; int column;} {
+    <RETURN> (
+        valueSelection()|
+        t = <NAME> {
+            name = t.toString();
+            line = t.beginLine;
+            column = t.beginColumn;
+
+            if (!alreadyExists(name, scopeCounter)) {
+                System.err.println("Uninitialized element \"" +name+ "\" in return at line " +line+ " column " +column);
+            }
+        }
+    ) {
+        System.out.println("* called return");
+    }
+}
+
+void printFunction():{Token t;} {
+    <PRINT>
+    t = <STRINGS> {
+        String stringContent = t.toString();
+        stringContent = stringContent.substring(1).substring(0,stringContent.length()-2);
+        System.out.println(stringContent);
+    }
+}
+
+void getStack():{} {
+    <GET_STACK> {
+        if (getStackSize() != 0) {
+            printVariablesStack(-1);
+        } else {
+            printErrorStack();
+        }
+    } |
+    <GET_CURRENT_SCOPE> {
+        if (getStackSize() != 0) {
+            printVariablesStack(scopeCounter);
+        } else {
+            printErrorStack();
+        }
+    } |
+    <SUPER_EXIT> {
+        superExit();
+    }
+}
+
+void getVersion():{} {
+    <GET_VERSION> {
+      System.out.println(VERSION);
+    }
+}
