@@ -13,7 +13,7 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
             "{" (<EXPRESSION>)* "}"   (* usata per le espressioni su singola riga *)
 ```
 
-### Expression
+### Expression
 
 ```
 <EXPRESSION> ::= (<COMMAND> (carriage return | ";")+) |
@@ -21,7 +21,7 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
                 (<BLOCK> (carriage return)*)
 ```
 
-### Control Flow Statements
+### Control Flow Statements
 
 ```
 <CONTROL_STATEMENT> ::= <IF_STATEMENT> | <FOR_STATEMENT> | <WHILE_STATEMENT> |
