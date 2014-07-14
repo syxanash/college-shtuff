@@ -1,5 +1,5 @@
 /**
- * Parser for a high-level scripting programming language called SoftScript.
+ * Parser for a high-level and case unsensitive programming language called SoftScript.
  * This language contains common control structures, both conditional and iterative ones, you can also declare functions and modules.
  * It follows dynamic scope rules and in compile time gives info about stack records and environment status.
  * At RUN-TIME the interpreter provides a real-time interactive shell (to test some features, for example) or compile a source file by specifying its path.
@@ -480,33 +480,14 @@ void controlStatement():{} {
 }
 
 void caseStatement():{Token t; int line; int column; String name = "";} {
-    <CASE>
-    (
-        (
-            <LPARENT>
-            t = <NAME>
-            <RPARENT> |        //both "case (var) is..." and "case var is" are allowed
-            t = <NAME>
-        ) {
-            line = t.beginLine;
-            column = t.beginColumn;
-
-            // Checks if variables in case statament are in current scope
-            name = t.toString();
-
-            if (!alreadyExists(name, scopeCounter)) {
-              System.err.println("Using an uninitialized element \"" + name + "\" in case statement at line " + line + " column " + column);
-            }
-          } 
-    )
-    <IS>
+    <CASE> (controlExpression())+ <IS>
     (<CARRIAGE_RETURN>)*
         (
             valueSelection()
             <COLON>
             (<CARRIAGE_RETURN>)*
             ( expression() )*
-            (<BREAK> | <BREAK2> {
+            (<BREAK> | t=<BREAK2> {
                 line = t.beginLine; column = t.beginColumn; System.out.println("Found BREK at row: "+line+" and column: "+column+", replaced with BREAK!");
             })
             (<CARRIAGE_RETURN>)*
@@ -516,7 +497,7 @@ void caseStatement():{Token t; int line; int column; String name = "";} {
         (<COLON>)?
         (<CARRIAGE_RETURN>)*
         ( expression() )*
-        (<BREAK> | <BREAK2> {
+        (<BREAK> | t=<BREAK2> {
             line = t.beginLine; column = t.beginColumn; System.out.println("Found BREK at row: "+line+" and column: "+column+", replaced with BREAK!");
         })
         (<CARRIAGE_RETURN>)*

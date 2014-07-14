@@ -10,22 +10,24 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
             
             function, name, "(", param, (",", param)*, ")", ((carriege return)+ (<EXPRESSION>)* (end_function | end_block)) |
             
-            "{" (<EXPRESSION>)* "}" (* usata per le espressioni su singola riga *)
+            "{" (<EXPRESSION>)* "}"   (* usata per le espressioni su singola riga *)
 ```
 
-### Expression
+### Expression
+
 ```
 <EXPRESSION> ::= (<COMMAND> (carriage return | ";")+) |
                 <CONTROL_STATEMENT> (carriage return)+ |
                 (<BLOCK> (carriage return)*)
 ```
 
-### Control Flow Statements
+### Control Flow Statements
+
 ```
 <CONTROL_STATEMENT> ::= <IF_STATEMENT> | <FOR_STATEMENT> | <WHILE_STATEMENT> |
                         <REPEAT_STATEMENT> | <CASE STATEMENT>
 
-<CASE_STATEMENT> ::= case, ["("] variable [")"], is, (carriage return)*
+<CASE_STATEMENT> ::= case, ["("] (<CONTROL_EXPRESSION>)+ [")"], is, (carriage return)*
                      (<VALUE_TYPE>, ':', (carriage return)* (<EXPRESSION>)* break
                      (carriage_return)*)+ [case_default (":")+ (carriage return)*
                      (<EXPRESSION>)* break (carriage_return)*] (end case | end block)
