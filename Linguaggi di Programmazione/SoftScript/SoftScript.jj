@@ -1,5 +1,5 @@
 /**
- * Parser for a high-level and case unsensitive programming language called SoftScript.
+ * Parser for a high-level scripting programming language called SoftScript.
  * This language contains common control structures, both conditional and iterative ones, you can also declare functions and modules.
  * It follows dynamic scope rules and in compile time gives info about stack records and environment status.
  * At RUN-TIME the interpreter provides a real-time interactive shell (to test some features, for example) or compile a source file by specifying its path.
