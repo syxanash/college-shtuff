@@ -1,6 +1,9 @@
 # creo un modulo iniziale
+# e lo estendo importando tutte le funzioni
+# presenti in un altro modulo
+# fittizio chiamato Matematica
 
-module gestioneSpesa
+module GestioneSpesa extend Matematica
   # creo una funzione e ci passo
   # dei parametri formali all'interno
 
@@ -38,6 +41,12 @@ module gestioneSpesa
     var nuovoPrezzo: Float
 
     nuovoPrezzo = prezzo * sconto / 100
+
+    # chiamo una funzione fittizia chiamata
+    # Radix presente nel modulo che ho esteso chiamato Matematica
+    # e la applico al nuovo prezzo calcolato
+
+    var risultato = call Matematica::Radix(nuovoPrezzo)
 
     return nuovoPrezzo
   end

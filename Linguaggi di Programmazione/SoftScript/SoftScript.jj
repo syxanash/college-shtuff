@@ -302,7 +302,11 @@ TOKEN: {
     <END_FUNCTION: "end func" | "end function"> |
 
     <BEGIN_BLOCK: "begin"> |
-    <END_BLOCK: "end">
+    <END_BLOCK: "end">     |
+
+    <USING: "using">     |
+    <EXTEND: "extend"> |
+    <OBJECT: "::">
 }
 
 // EXTERNAL FUNCTIONS
@@ -417,13 +421,28 @@ void main():{} {
 
 void block():{Token t; int line; int column; scopeCounter++;} {
     <BEGIN_BLOCK>
+    (
+        <USING> t = <NAME>
+        {
+            System.out.println("* you're using a module called: " + t.toString());
+        }
+    )*       // using functions contained in a module
     (<CARRIAGE_RETURN>)*
     ( expression() )*
     <END_BLOCK> {
         disableOldScope(scopeCounter--);
     } |
+
     <MODULE>
     <NAME>
+    (
+        <EXTEND>
+        t = <NAME>
+        {
+            System.out.println("* you're extending a module called: " + t.toString());
+        }
+    )?
+
     (<CARRIAGE_RETURN>)*
     ( expression() )*
     (<END_MODULE> | <END_BLOCK>) {
@@ -854,9 +873,18 @@ void gotoLabel():{Token t; int line; int column;} {
     <NAME>
 }
 
-void subRoutine():{} {
+void subRoutine():{Token t;} {
     <CALL>
-    <NAME>
+
+    // in case you want to call a function from a different module (who knows...)
+
+    t = <NAME> (
+        <OBJECT> <NAME>
+        {
+            System.out.println("This sub-routine belongs to: " + t.toString());
+        }
+    )*
+    
     <LPARENT>
     (   (valueSelection()|<NAME>)
         (<COMMA>
@@ -864,8 +892,8 @@ void subRoutine():{} {
         )*
     )?
     <RPARENT> {
-      System.out.println("> you just invoked a private subRoutine!");
-      }
+        System.out.println("> you just invoked a private subRoutine!" );
+    }
 }
 
 void returnStatement():{Token t; String name = ""; int line; int column;} {

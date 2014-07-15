@@ -1,4 +1,4 @@
-begin
+begin using Matematica
   const numeroElementi = 10
   const mesi = 5
 
@@ -13,6 +13,12 @@ begin
   if (-3 < (4*3)) then
     print "penso questa disuguaglianza sia vera..."
   end
+
+  # ora sfrutto Radix la funzione contenuta
+  # nel modulo Matematica per effettuare il
+  # calcolo della radice sulla variabile formuletta
+
+  formuletta = call Matematica::Radix(formuletta)
 
   # concateno una stringa con un intero
 

@@ -5,8 +5,9 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
 ### Block
 
 ```
-<BLOCK> ::= begin (carriage return)* (<EXPRESSION>)* end block |
-            module, name (carriage return)* (<EXPRESSION>)* end block |
+<BLOCK> ::= begin (using <MODULE NAME>)* (carriage return)* (<EXPRESSION>)* end block |
+            module, name (extend <MODULE NAME>)? (carriage return)*
+            (<EXPRESSION>)* end block |
             
             function, name, "(", param, (",", param)*, ")", ((carriege return)+ (<EXPRESSION>)* (end_function | end_block)) |
             
@@ -97,7 +98,8 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
 ### Sub Routines
 
 ```
-<SUBROUTINE> ::= call name "(" [(<VALUE_SELECTION> | parameter name) (","
+<SUBROUTINE> ::= call name ("::" <FUNCTION NAME>)? "("
+				 [(<VALUE_SELECTION> | parameter name) (","
                  (<VALUE_SELECTION> | parameter name))*] ")"
 <RETURN_STATEMENT> ::= return (<VALUE_SELECTION> | variable name)
 ```
