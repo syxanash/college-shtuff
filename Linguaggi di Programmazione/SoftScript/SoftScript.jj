@@ -684,7 +684,7 @@ void assignation(): {
           addVariable(name, scopeCounter);
         } else {
             // variable must exists in a existing scope in order to be used
-            if (!alreadyExists(name, scopeCounter)) {
+            if (!alreadyExists(name, -1)) {
                 System.err.println("Using an uninitialized element \"" +name+ "\" at line " +line+ " column " +column);
             }
         }
