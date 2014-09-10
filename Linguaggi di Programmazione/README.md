@@ -1,10 +1,10 @@
 # SoftScript
 
-Parser per un linguaggio di scripting ad alto livello chiamato SoftScript.
+Parser per un linguaggio di scripting chiamato SoftScript.
 
 ## Sintassi
 
-```
+```js
 begin
   var name = "Simone"
   var languageName = "SoftScript"
