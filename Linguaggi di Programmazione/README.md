@@ -44,7 +44,7 @@ Il parser per SoftScript è un concept sviluppato per l'esame di [Linguaggi di P
 Sviluppatori del progetto:
 
 * Simone Marzulli
-* Antonio Antonino
+* [Antonio Antonino](https://github.com/Diiaablo95)
 
 ## Build
 
