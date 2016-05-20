@@ -1,6 +1,5 @@
-### College.
+### College
 
-Computer Science.
-yes I know...
+Computer Science at [Univeristà degli Studi di Bari](http://www.uniba.it/).
 
 *most of this stuff is in Italian :it:*
