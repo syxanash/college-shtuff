@@ -1,10 +1,8 @@
 ![logo](http://i.imgur.com/4uraJCp.png)
 
-# Pumping Wars
-
 L'unico e vero gioco sull'esame di Linguaggi di Programmazione, basato su una storia vera e creato per alleviare le frustranti ore di studio. Giocaci con prudenza durante le pause, che senno' non passi l'esame...
 
-La storia di questo gioco riguarda due professori di *Linguaggi di Programmazione* che devono sconfiggersi a vicenda, sparandosi due diverse lettere greche che rappresentano la [stringa vuota](https://it.wikipedia.org/wiki/Stringa_(linguaggi_formali) nei linguaggi formali.
+La storia di questo gioco riguarda due professori di *Linguaggi di Programmazione* che devono sconfiggersi a vicenda, sparandosi due diverse lettere greche che rappresentano la [stringa vuota](https://it.wikipedia.org/wiki/Stringa_(linguaggi_formali)) nei linguaggi formali.
 
 ## Oggetti
 
@@ -47,7 +45,7 @@ File name | Source
 ```explosion.png``` | [link](http://flashvhtml.com/html/img/action/explosion/)
 ```shellshock.png``` | [link](https://www.whitehatsec.com/wp-content/uploads/Shellshock-Image.png)
 ```disk.png``` | (immagine modificata) [link](http://orig07.deviantart.net/a254/f/2012/199/a/2/a25bdeccc38969653a00ea8dd27fecbe-d57ol31.png)
-```nuke.png``` | (immagine modificata) [link](http://worldartsme.com/nuclear-bomb-explosion-clipart.html#gal_post_26416_nuclear-bomb-explosion-clipart-1.jpg)
+```nuke.png``` | (immagine modificata) [link](http://worldartsme.com/nuclear-bomb-explosion-clipart.html#gal_post_26416_nuclear-bomb-explosion-clipart-1.jpg)
 ```kleene_star.png``` | (immagine modificata) [link](http://banjo2015.deviantart.com/art/Power-star-pixel-534796669)
 ```forkbomb.png``` | (immagine modificata) [link](http://www.cialfor.com/wp-content/uploads/2016/04/fork-bomb.png)
 ```nick.png & johnny.png``` | (immagine modificata)  [link](http://opengameart.org/content/teacher)
