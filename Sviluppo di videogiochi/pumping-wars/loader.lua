@@ -1,6 +1,6 @@
 function loader()
     love.mouse.setVisible(false)
-    love.window.setIcon(love.image.newImageData("assets/icon/icon.png"))
+    love.window.setIcon(love.image.newImageData("assets/icon.png"))
 
     -- set the max score available for the game
     max_score = 100
