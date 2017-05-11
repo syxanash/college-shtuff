@@ -1,6 +1,6 @@
-#EBNF per SoftScript
+#EBNF for SoftScript
 
-Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
+SoftScript grammar described with the *extended Backus–Naur form*.
 
 ### Block
 
@@ -8,10 +8,10 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
 <BLOCK> ::= begin (using <MODULE NAME>)* (carriage return)* (<EXPRESSION>)* end block |
             module, name (extend <MODULE NAME>)? (carriage return)*
             (<EXPRESSION>)* end block |
-            
+
             function, name, "(", param, (",", param)*, ")", ((carriege return)+ (<EXPRESSION>)* (end_function | end_block)) |
-            
-            "{" (<EXPRESSION>)* "}"   (* usata per le espressioni su singola riga *)
+
+            "{" (<EXPRESSION>)* "}"   (* used for statements on single line *)
 ```
 
 ### Expression
@@ -78,7 +78,7 @@ Grammatica per il linguaggio **SoftScript** espressa mediante formalismo EBNF.
                   ("[" (int_value | name) "]")*))+ |
                   <ARRAY_ASSIGNATION> |
                   <SUBROUTINE>) | size int_value (per int_value)*] (* Used for matrix *)
-                  
+
 <ARRAY_ASSIGNATION> ::= "[" (<VALUE_SELECTION> | variable name)
                         ("," (<VALUE_SELECTION> | name))* "]"
 ```

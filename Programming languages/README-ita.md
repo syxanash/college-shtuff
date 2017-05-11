@@ -8,7 +8,7 @@ Parser per un linguaggio di scripting chiamato SoftScript.
 begin
   var name = "Simone"
   var languageName = "SoftScript"
-  
+
   print "Hello " + name + " welcome to " + languageName
 end
 ```
@@ -27,7 +27,7 @@ Il parser permette di interpretare il codice in tempo reale mediante una *shell 
 Il linguaggio prevede anche un controllo sugli errori di sintassi e lessico mediante produzioni d'errore su token ammissibili. In caso di errori irreparabili, il parser si interrompe lanciando un messaggio di errore che indica la posizione **(riga e colonna)** e il nome dell’ultimo token corretto riconosciuto. Il successivo, quindi, sarà il token errato.
 
 Il punto e virgola per la separazione dei vari statement è opzionale poiché il linguaggio riconoscerà il carriege return come fine dello statement. Tuttavia il ";" verrà utilizzato per descrivere espressioni concatenate su una singola riga di codice.
-      
+
 ## Caratteristiche aggiuntive
 
 Le caratteristiche più importanti del linguaggio sono di seguito elencate.
@@ -60,7 +60,7 @@ Se la compilazione è andata a buon fine, si può eseguire l'interprete SoftScri
 java SoftScript esempio_variabili.sft
 ```
 
-##Licenza
+## Licenza
 ```
 The MIT License (MIT)
 
