@@ -1,4 +1,4 @@
-#EBNF for SoftScript
+# EBNF for SoftScript
 
 SoftScript grammar described with the *extended Backus–Naur form*.
 
