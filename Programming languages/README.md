@@ -35,8 +35,7 @@ Here are listed some of the additional and important features implemented in thi
 * infix notation for arithmetical and logical operators using the **Precedence Climbing Method** by Martin Richards e Colin Whitby-Stevens;
 * dynamic scope which allows to create separated blocks of code and different scope for variables.
 
-
-## Developers
+## About
 
 The parser for the SoftScript language is a concept written for the exam [Linguaggi di Programmazione](http://www.di.uniba.it/~fanizzi/corsi/lp/) (Programming Languages) a computer science class in [Informatica e Tecnologie per la Produzione del Software](http://informatica.di.uniba.it/laurea_produzione3/index.htm) • [Università degli Studi di Bari](http://www.uniba.it/)
 
