@@ -1,7 +1,7 @@
 package lab20160118;
 
 
-public class Whatsup {
+public class Whatsup implements Comparable{
 	private IndexedList<Pacchetto> comunicazione = new IndexedAL<Pacchetto>();
 	private int last = -1;
 
@@ -37,4 +37,13 @@ public class Whatsup {
 
 		return msg;
 	}
+	
+	@Override
+        public int compareTo(Object o) {
+            Whatsup other = (Whatsup) o;
+            if(this.complete() && other.complete()){
+                return this.toString().compareTo(other.toString());
+            }
+            return -1;
+        }
 }
