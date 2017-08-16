@@ -24,20 +24,19 @@ public class ItemRecommender {
 			sessioni.addSessione(currentSession);
 		}
 	}
-
-	// non sono certo di aver capito cosa sia la cooccorrenza
-	public int acquistiAssociati(Prodotto a, Prodotto b) {
-		int frequenza = 0;
-
-		for (SessioneLL s : sessioni.listaSessioni) {
-			for (Prodotto p : s.prodotti) {
-				if (p.nome.compareTo(a.nome) == 0
-						|| p.nome.compareTo(b.nome) == 0) {
-					frequenza++;
-				}
-			}
-		}
-		
-		return frequenza;
-	}
+	
+	public int acquistiAssociati(Prodotto a, Prodotto b){
+        	int occurences = 0;
+        	for (SessioneLL sessione : sessioni.listaSessioni){
+            		boolean foundA = false, foundB = false;
+            		for (Prodotto p : sessione.prodotti)
+                		if (p == a)
+                    			foundA = true;
+                		else if (p == b)
+                    			foundB = true;
+            		if (foundA == true && foundB == true)
+                		occurences++;
+        	}
+        	return occurences;
+    	}
 }
