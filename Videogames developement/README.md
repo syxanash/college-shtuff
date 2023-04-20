@@ -1,4 +1,4 @@
-![logo](http://i.imgur.com/4uraJCp.png)
+![logo](https://i.imgur.com/dwtmvzR.png)
 
 L'unico e vero gioco sull'esame di Linguaggi di Programmazione, basato su una storia vera e creato per alleviare le frustranti ore di studio. Giocaci con prudenza durante le pause, che senno' non passi l'esame...
 
