@@ -26,7 +26,9 @@ Quando uno dei due player raggiunge *40* punti, comparira' il temibile **Noam Ch
 
 Prima di giocare dai un'occhiata al gameplay
 
-[![gameplay](https://thumbs.gfycat.com/ForthrightSkinnyChicken-size_restricted.gif)](https://gfycat.com/ForthrightSkinnyChicken)
+
+https://github.com/user-attachments/assets/12ffc427-9c62-4e7d-b64b-8e3f7c6ca6d2
+
 
 ## About
 
